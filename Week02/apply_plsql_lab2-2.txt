@@ -1,0 +1,140 @@
+SQL> 
+SQL> -- ... insert your solution here ...
+SQL> /* Drop the types from most to least dependent. */
+SQL> DROP TYPE table_list;
+
+Type dropped.
+
+SQL> DROP TYPE table_struct;
+
+Type dropped.
+
+SQL> 
+SQL> /* Create the record type structure. */
+SQL> CREATE OR REPLACE
+  2    TYPE table_struct IS OBJECT
+  3    ( table_name    VARCHAR2(30)
+  4    , column_cnt    NUMBER
+  5    , row_cnt       NUMBER );
+  6  /
+
+Type created.
+
+SQL> 
+SQL> /* Create the collection of a record type structure. */
+SQL> CREATE OR REPLACE
+  2    TYPE table_list IS TABLE OF table_struct;
+  3  /
+
+Type created.
+
+SQL> 
+SQL> /* Create the listing function. */
+SQL> CREATE OR REPLACE
+  2  FUNCTION listing RETURN table_list IS
+  3  
+  4    /* Variable list. */
+  5    lv_column_cnt  NUMBER;
+  6    lv_row_cnt     NUMBER;
+  7  
+  8    /* Declare a statement variable. */
+  9    stmt  VARCHAR2(200);
+ 10  
+ 11    /* Declare a system reference cursor variable. */
+ 12    lv_refcursor  SYS_REFCURSOR;
+ 13    lv_table_cnt  NUMBER;
+ 14  
+ 15    /* Declare an output variable.  */
+ 16    lv_list	TABLE_LIST := table_list();
+ 17  
+ 18    /* Declare a table list cursor that excludes APEX tables. */
+ 19    CURSOR c IS
+ 20  	 SELECT table_name
+ 21  	 FROM	user_tables
+ 22  	 WHERE	table_name NOT IN
+ 23  		 ('DEPT','EMP','APEX$_ACL','APEX$_WS_WEBPG_SECTIONS','APEX$_WS_ROWS'
+ 24  		 ,'APEX$_WS_HISTORY','APEX$_WS_NOTES','APEX$_WS_LINKS'
+ 25  		 ,'APEX$_WS_TAGS','APEX$_WS_FILES','APEX$_WS_WEBPG_SECTION_HISTORY'
+ 26  		 ,'DEMO_USERS','DEMO_CUSTOMERS','DEMO_ORDERS','DEMO_PRODUCT_INFO'
+ 27  		 ,'DEMO_ORDER_ITEMS','DEMO_STATES');
+ 28  
+ 29    /* Declare a column count. */
+ 30    CURSOR cnt
+ 31    ( cv_table_name	VARCHAR2 ) IS
+ 32  	 SELECT   table_name
+ 33  	 ,	  COUNT(column_id) AS cnt_columns
+ 34  	 FROM	  user_tab_columns
+ 35  	 WHERE	  table_name = cv_table_name
+ 36  	 GROUP BY table_name;
+ 37  
+ 38  BEGIN
+ 39    /* Read through the data set of non-environment variables. */
+ 40    FOR i IN c LOOP
+ 41  
+ 42  	 /* Count the columns of a table. */
+ 43  	 FOR j IN cnt(i.table_name) LOOP
+ 44  	   lv_column_cnt := j.cnt_columns;
+ 45  	 END LOOP;
+ 46  
+ 47  	 /* Declare a statement. */
+ 48  	 stmt := 'SELECT COUNT(*) AS column_cnt FROM '||i.table_name;
+ 49  
+ 50  	 /* Open the cursor and write set to collection. */
+ 51  	 OPEN lv_refcursor FOR stmt;
+ 52  	 LOOP
+ 53  	   FETCH lv_refcursor INTO lv_table_cnt;
+ 54  	   EXIT WHEN lv_refcursor%NOTFOUND;
+ 55  	   lv_list.EXTEND;
+ 56  	   lv_list(lv_list.COUNT) := table_struct(
+ 57  					 table_name => i.table_name
+ 58  				       , column_cnt => lv_column_cnt
+ 59  				       , row_cnt    => lv_table_cnt );
+ 60  	 END LOOP;
+ 61    END LOOP;
+ 62  
+ 63    RETURN lv_list;
+ 64  END;
+ 65  /
+
+Function created.
+
+SQL> 
+SQL> COL table_name   FORMAT A20     HEADING "Table Name"
+SQL> COL column_cnt   FORMAT 9,999  HEADING "Column #"
+SQL> COL row_cnt      FORMAT 9,999  HEADING "Row #"
+SQL> SELECT table_name
+  2  ,	    column_cnt
+  3  ,	    row_cnt
+  4  FROM   TABLE(listing);
+
+Table Name           Column #  Row #                                            
+-------------------- -------- ------                                            
+DEMO_TAGS                   8      6                                            
+DEMO_TAGS_TYPE_SUM          3      3                                            
+DEMO_TAGS_SUM               2      3                                            
+DEMO_CONSTRAINT_LOOK        2      4                                            
+UP                                                                              
+                                                                                
+SYSTEM_USER                11      5                                            
+COMMON_LOOKUP              10     49                                            
+MEMBER                      9     10                                            
+CONTACT                    10     18                                            
+ADDRESS                    10     18                                            
+
+Table Name           Column #  Row #                                            
+-------------------- -------- ------                                            
+STREET_ADDRESS              8     28                                            
+TELEPHONE                  11     18                                            
+RENTAL                      8  4,694                                            
+ITEM                       14     93                                            
+RENTAL_ITEM                 9  4,703                                            
+PRICE                      11    558                                            
+TRANSACTION                12  4,694                                            
+CALENDAR                    9    300                                            
+AIRPORT                     9      6                                            
+ACCOUNT_LIST                8    200                                            
+
+19 rows selected.
+
+SQL> 
+SQL> SET ECHO OFF
