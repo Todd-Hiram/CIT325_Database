@@ -1,0 +1,30 @@
+SQL> 
+SQL> SELECT   table_name
+  2  FROM     user_tables
+  3  WHERE    table_name NOT IN ('EMP','DEPT')
+  4  AND NOT  table_name LIKE 'DEMO%'
+  5  AND NOT  table_name LIKE 'APEX%'
+  6  ORDER BY table_name;
+
+Table Name                                                                      
+--------------------                                                            
+ACCOUNT_LIST                                                                    
+ADDRESS                                                                         
+AIRPORT                                                                         
+CALENDAR                                                                        
+COMMON_LOOKUP                                                                   
+CONTACT                                                                         
+ITEM                                                                            
+MEMBER                                                                          
+PRICE                                                                           
+RENTAL                                                                          
+RENTAL_ITEM                                                                     
+STREET_ADDRESS                                                                  
+SYSTEM_USER                                                                     
+TELEPHONE                                                                       
+TRANSACTION                                                                     
+
+15 rows selected.
+
+SQL> 
+SQL>   SET ECHO OFF
