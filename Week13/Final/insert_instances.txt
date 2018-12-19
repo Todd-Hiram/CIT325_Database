@@ -1,0 +1,32 @@
+
+Procedure created.
+
+
+Procedure created.
+
+
+Procedure created.
+
+
+Procedure created.
+
+No errors.
+
+Procedure created.
+
+
+Procedure created.
+
+
+Procedure created.
+
+BEGIN
+*
+ERROR at line 1:
+ORA-08002: sequence TOLKIEN_S.CURRVAL is not yet defined in this session
+ORA-06512: at "STUDENT.MAN_T", line 9
+ORA-06512: at "STUDENT.CREATE_MAN", line 3
+ORA-06512: at line 3 
+
+
+No errors.
