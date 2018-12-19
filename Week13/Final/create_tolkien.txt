@@ -1,0 +1,20 @@
+DROP TABLE tolkien
+           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+
+Table created.
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ TOLKIEN_ID                                         NUMBER
+ TOLKIEN_CHARACTER                                  BASE_T
+
+
+Sequence dropped.
+
+
+Sequence created.
+
