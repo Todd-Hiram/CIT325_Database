@@ -1,0 +1,938 @@
+
+Package created.
+
+PROCEDURE INSERT_CONTACT
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ PV_FIRST_NAME                  VARCHAR2                IN    
+ PV_MIDDLE_NAME                 VARCHAR2                IN    
+ PV_LAST_NAME                   VARCHAR2                IN    
+ PV_CONTACT_TYPE                VARCHAR2                IN    
+ PV_ACCOUNT_NUMBER              VARCHAR2                IN    
+ PV_MEMBER_TYPE                 VARCHAR2                IN    
+ PV_CREDIT_CARD_NUMBER          VARCHAR2                IN    
+ PV_CREDIT_CARD_TYPE            VARCHAR2                IN    
+ PV_CITY                        VARCHAR2                IN    
+ PV_STATE_PROVINCE              VARCHAR2                IN    
+ PV_POSTAL_CODE                 VARCHAR2                IN    
+ PV_ADDRESS_TYPE                VARCHAR2                IN    
+ PV_COUNTRY_CODE                VARCHAR2                IN    
+ PV_AREA_CODE                   VARCHAR2                IN    
+ PV_TELEPHONE_NUMBER            VARCHAR2                IN    
+ PV_TELEPHONE_TYPE              VARCHAR2                IN    
+ PV_USER_NAME                   VARCHAR2                IN    
+PROCEDURE INSERT_CONTACT
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ PV_FIRST_NAME                  VARCHAR2                IN    
+ PV_MIDDLE_NAME                 VARCHAR2                IN    
+ PV_LAST_NAME                   VARCHAR2                IN    
+ PV_CONTACT_TYPE                VARCHAR2                IN    
+ PV_ACCOUNT_NUMBER              VARCHAR2                IN    
+ PV_MEMBER_TYPE                 VARCHAR2                IN    
+ PV_CREDIT_CARD_NUMBER          VARCHAR2                IN    
+ PV_CREDIT_CARD_TYPE            VARCHAR2                IN    
+ PV_CITY                        VARCHAR2                IN    
+ PV_STATE_PROVINCE              VARCHAR2                IN    
+ PV_POSTAL_CODE                 VARCHAR2                IN    
+ PV_ADDRESS_TYPE                VARCHAR2                IN    
+ PV_COUNTRY_CODE                VARCHAR2                IN    
+ PV_AREA_CODE                   VARCHAR2                IN    
+ PV_TELEPHONE_NUMBER            VARCHAR2                IN    
+ PV_TELEPHONE_TYPE              VARCHAR2                IN    
+ PV_USER_ID                     NUMBER                  IN    
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+ System System       First         Last                                         
+User ID User Name    Name       MI Name                                         
+------- ------------ ---------- -- ----------                                   
+      6 BONDSB       Barry      L  Bonds                                        
+      7 OWENSR       Wardell    S  Curry                                        
+     -1 ANONYMOUS    <Null>     <N <Null>                                       
+                                ul                                              
+                                l>                                              
+                                                                                
+
+3 rows selected.
+
+
+Warning: Package Body created with compilation errors.
+
+  1     CREATE OR REPLACE PACKAGE BODY contact_package IS
+  2          PROCEDURE insert_contact
+  3                ( pv_first_name         VARCHAR2
+  4                , pv_middle_name        VARCHAR2
+  5                , pv_last_name          VARCHAR2
+  6                , pv_contact_type       VARCHAR2
+  7                , pv_account_number     VARCHAR2
+  8                , pv_member_type        VARCHAR2
+  9                , pv_credit_card_number VARCHAR2
+ 10                , pv_credit_card_type   VARCHAR2
+ 11                , pv_city               VARCHAR2
+ 12                , pv_state_province     VARCHAR2
+ 13                , pv_postal_code        VARCHAR2
+ 14                , pv_address_type       VARCHAR2
+ 15                , pv_country_code       VARCHAR2
+ 16                , pv_area_code          VARCHAR2
+ 17                , pv_telephone_number   VARCHAR2
+ 18                , pv_telephone_type     VARCHAR2
+ 19                , pv_user_name          VARCHAR2) is
+ 20  
+ 21                                -- Add local variables
+ 22                lv_contact_type         VARCHAR2(50);
+ 23                lv_member_type          VARCHAR2(50);
+ 24                lv_credit_card_type     VARCHAR2(50);
+ 25                lv_address_type         VARCHAR2(50);
+ 26                lv_telephone_type       VARCHAR2(50);
+ 27                lv_created_by           NUMBER;
+ 28                lv_creation_date        DATE := SYSDATE;
+ 29                lv_member_id            NUMBER;
+ 30  
+ 31  /* Write a dynamic SQL cursor that takes three parameters to return the common_lookup_id
+ 32  values into the program scope */
+ 33      CURSOR c
+ 34          (cv_table_name        VARCHAR2
+ 35          ,cv_column_name       VARCHAR2
+ 36          ,cv_lookup_type       VARCHAR2) is
+ 37          SELECT c.common_lookup_id
+ 38          FROM common_lookup c
+ 39          where c.common_lookup_table = cv_table_name
+ 40          and c.common_lookup_column = cv_column_name
+ 41          and c.common_lookup_type = cv_lookup_type;
+ 42  
+ 43  
+ 44  /* Return Member */
+ 45  	CURSOR m
+ 46  		(cv_account_number VARCHAR2) is
+ 47  		SELECT m.member_id
+ 48  		FROM member m
+ 49  		WHERE m.account_number = cv_account_number;
+ 50  
+ 51  BEGIN
+ 52  
+ 53  	SELECT s.system_user_id
+ 54  	into  lv_created_by
+ 55  	FROM   system_user s
+ 56  	where s.system_user_name = pv_user_name;
+ 57  
+ 58     /* Assign a value when a row exists. */
+ 59      -- Member Table lookup
+ 60  	FOR i IN c('MEMBER', 'MEMBER_TYPE', pv_member_type) LOOP
+ 61          lv_member_type := slice.common_lookup_id;
+ 62  	END LOOP;
+ 63  
+ 64  	-- Lookup contact type for Contact Table
+ 65  	FOR i IN c('CONTACT', 'CONTACT_TYPE', pv_contact_type) LOOP
+ 66          lv_contact_type := slice.common_lookup_id;
+ 67  	END LOOP;
+ 68  
+ 69  	-- this is part of the member table
+ 70  	FOR i IN c('MEMBER', 'CREDIT_CARD_TYPE', pv_credit_card_type) LOOP
+ 71          lv_credit_card_type := slice.common_lookup_id;
+ 72  	END LOOP;
+ 73  
+ 74      -- Address type lookup from Address Table
+ 75  	FOR i IN c('ADDRESS', 'ADDRESS_TYPE', pv_address_type) LOOP
+ 76          lv_address_type := slice.common_lookup_id;
+ 77  	END LOOP;
+ 78  
+ 79      -- Get Lookup DI for telephone table
+ 80  	FOR i IN c('TELEPHONE', 'TELEPHONE_TYPE', pv_telephone_type) LOOP
+ 81          lv_telephone_type := slice.common_lookup_id;
+ 82  	END LOOP;
+ 83  
+ 84  	-- SET the savepoint
+ 85  	SAVEPOINT starting_point1;
+ 86  
+ 87  
+ 88  /* Open CURSOR */
+ 89  OPEN m(pv_account_number);
+ 90  FETCH m INTO lv_member_id;
+ 91  
+ 92  /* Inserts for Member Table */
+ 93  IF m%NOTFOUND THEN
+ 94  		INSERT INTO member
+ 95  		( member_id
+ 96  		, member_type
+ 97  		, account_number
+ 98  		, credit_card_number
+ 99  		, credit_card_type
+100  		, created_by
+101  		, creation_date
+102  		, last_updated_by
+103  		, last_update_date )
+104      VALUES
+105  		( member_s1.NEXTVAL
+106  		, lv_member_type
+107  		, pv_account_number
+108  		, pv_credit_card_number
+109  		, lv_credit_card_type
+110  		, lv_created_by
+111  		, lv_creation_date
+112  		, lv_created_by
+113  		, lv_creation_date );
+114  END IF;
+115  
+116  INSERT INTO contact
+117          ( contact_id
+118          , member_id
+119          , contact_type
+120          , last_name
+121          , first_name
+122          , middle_name
+123          , created_by
+124          , creation_date
+125          , last_updated_by
+126          , last_update_date)
+127      VALUES
+128          ( contact_s1.NEXTVAL
+129          , member_s1.CURRVAL
+130          , lv_contact_type
+131          , pv_last_name
+132          , pv_first_name
+133          , pv_middle_name
+134          , lv_created_by
+135          , lv_creation_date
+136          , lv_created_by
+137          , lv_creation_date );
+138  
+139  -- insert into address table
+140  
+141  INSERT INTO address
+142          ( address_id
+143          , contact_id
+144          , address_type
+145          , city
+146          , state_province
+147          , postal_code
+148          , created_by
+149          , creation_date
+150          , last_updated_by
+151          , last_update_date)
+152      VALUES
+153          ( address_s1.NEXTVAL
+154          , contact_s1.CURRVAL
+155          , lv_address_type
+156          , pv_city
+157          , pv_state_province
+158          , pv_postal_code
+159          , lv_created_by
+160          , lv_creation_date
+161          , lv_created_by
+162          , lv_creation_date );
+163  
+164  -- insert into telephone table
+165  
+166  INSERT INTO telephone
+167          ( telephone_id
+168          , contact_id
+169          , address_id
+170          , telephone_type
+171          , country_code
+172          , area_code
+173          , telephone_number
+174          , created_by
+175          , creation_date
+176          , last_updated_by
+177          , last_update_date )
+178      VALUES
+179          ( telephone_s1.NEXTVAl
+180          , contact_s1.CURRVAL
+181          , address_s1.CURRVAL
+182          , lv_telephone_type
+183          , pv_country_code
+184          , pv_area_code
+185          , pv_telephone_number
+186          , lv_created_by
+187          , lv_creation_date
+188          , lv_created_by
+189          , lv_creation_date);
+190       COMMIT;
+191       EXCEPTION
+192       WHEN OTHERS THEN
+193       /* Until any partial results. */
+194                  -- dbms_output.put_line('['||lv_debug||']['||lv_debug_id||']');
+195                  -- dbms_output.put_line('ERROR IN PROCEDURE 1: '||SQLERRM);
+196  
+197        ROLLBACK TO starting_point1;
+198   END insert_contact;
+199  
+200  
+201  /************************************************************************************************
+202  Second Procedure
+203  ***********************************************************************************************/
+204   PROCEDURE insert_contact
+205           ( pv_first_name         VARCHAR2
+206           , pv_middle_name        VARCHAR2
+207           , pv_last_name          VARCHAR2
+208           , pv_contact_type       VARCHAR2
+209           , pv_account_number     VARCHAR2
+210           , pv_member_type        VARCHAR2
+211           , pv_credit_card_number VARCHAR2
+212           , pv_credit_card_type   VARCHAR2
+213           , pv_city               VARCHAR2
+214           , pv_state_province     VARCHAR2
+215           , pv_postal_code        VARCHAR2
+216           , pv_address_type       VARCHAR2
+217           , pv_country_code       VARCHAR2
+218           , pv_area_code          VARCHAR2
+219           , pv_telephone_number   VARCHAR2
+220           , pv_telephone_type     VARCHAR2
+221           , pv_user_id            NUMBER ) is
+222  
+223       -- Add local variables
+224           lv_contact_type         VARCHAR2(50);
+225           lv_member_type          VARCHAR2(50);
+226           lv_credit_card_type     VARCHAR2(50);
+227           lv_address_type         VARCHAR2(50);
+228           lv_telephone_type       VARCHAR2(50);
+229       -- If no user_id is passed in, SET default to -1
+230           lv_created_by           NUMBER:= nvl(pv_user_id, -1);
+231           lv_creation_date        DATE := SYSDATE;
+232           lv_member_id            NUMBER;
+233  
+234  /* Local cursor declaration */
+235    CURSOR c
+236         ( cv_table_name        VARCHAR2
+237         , cv_column_name       VARCHAR2
+238         , cv_lookup_type       VARCHAR2 ) is
+239         SELECT c.common_lookup_id
+240         FROM common_lookup c
+241         where c.common_lookup_table = cv_table_name
+242         and c.common_lookup_column = cv_column_name
+243         and c.common_lookup_type = cv_lookup_type;
+244  
+245  /* Member Cursor */
+246    CURSOR m
+247         (cv_account_number VARCHAR2) is
+248         SELECT m.member_id
+249         FROM member m
+250         WHERE m.account_number = cv_account_number;
+251  
+252  
+253  
+254  BEGIN
+255  /* Assign a value when a row exists. */
+256      -- Member Table lookup
+257  	FOR slice IN c('MEMBER', 'MEMBER_TYPE', pv_member_type) LOOP
+258          lv_member_type := slice.common_lookup_id;
+259  	END LOOP;
+260  
+261  	-- Lookup contact type for Contact Table
+262  	FOR slice IN c('CONTACT', 'CONTACT_TYPE', pv_contact_type) LOOP
+263          lv_contact_type := slice.common_lookup_id;
+264  	END LOOP;
+265  
+266  	-- Lookup for credit card type
+267  	FOR slice IN c('MEMBER', 'CREDIT_CARD_TYPE', pv_credit_card_type) LOOP
+268          lv_credit_card_type := slice.common_lookup_id;
+269  	END LOOP;
+270  
+271      -- Address type lookup from Address Table
+272  	FOR slice IN c('ADDRESS', 'ADDRESS_TYPE', pv_address_type) LOOP
+273          lv_address_type := slice.common_lookup_id;
+274  	END LOOP;
+275  
+276      -- Get Lookup DI for telephone table
+277  	FOR slice IN c('TELEPHONE', 'TELEPHONE_TYPE', pv_telephone_type) LOOP
+278          lv_telephone_type := slice.common_lookup_id;
+279  	END LOOP;
+280  
+281          -- Local Variable for Username
+282              -- SELECT system_user_id INTO lv_system_user_id -- lv_created_by
+283              -- FROM   system_user
+284              -- WHERE  system_user_name = pv_user_name;
+285  
+286  	-- SET the savepoint
+287  	SAVEPOINT starting_point2;
+288  
+289      -- Open Cursor
+290      OPEN m(pv_account_number);
+291      FETCH m INTO lv_member_id;
+292  
+293  /* If no member found, add new member */
+294  IF m%NOTFOUND THEN
+295  
+296  		INSERT INTO member
+297              ( member_id
+298              , member_type
+299              , account_number
+300              , credit_card_number
+301              , credit_card_type
+302              , created_by
+303              , creation_date
+304              , last_updated_by
+305              , last_update_date )
+306              VALUES
+307              ( member_s1.NEXTVAL
+308              , lv_member_type
+309              , pv_account_number
+310              , pv_credit_card_number
+311              , lv_credit_card_type
+312              , lv_created_by
+313              , lv_creation_date
+314              , lv_created_by
+315              , lv_creation_date );
+316  END IF;
+317  
+318          INSERT INTO contact
+319  			( contact_id
+320  			, member_id
+321  			, contact_type
+322  			, last_name
+323  			, first_name
+324  			, middle_name
+325  			, created_by
+326  			, creation_date
+327  			, last_updated_by
+328  			, last_update_date)
+329          VALUES
+330  			( contact_s1.NEXTVAL
+331  			, member_s1.CURRVAL
+332  			, lv_contact_type
+333  			, pv_last_name
+334  			, pv_first_name
+335  			, pv_middle_name
+336  			, lv_created_by
+337  			, lv_creation_date
+338  			, lv_created_by
+339  			, lv_creation_date );
+340  
+341  
+342  -- insert into address table
+343  
+344          INSERT INTO address
+345                  ( address_id
+346                   , contact_id
+347                   , address_type
+348                   , city
+349                   , state_province
+350                   , postal_code
+351                   , created_by
+352                   , creation_date
+353                   , last_updated_by
+354                   , last_update_date)
+355               VALUES
+356                  ( address_s1.NEXTVAL
+357                  , contact_s1.CURRVAL
+358                  , lv_address_type
+359                  , pv_city
+360                  , pv_state_province
+361                  , pv_postal_code
+362                  , lv_created_by
+363                  , lv_creation_date
+364                  , lv_created_by
+365                  , lv_creation_date );
+366  
+367  
+368  -- insert into telephone table
+369  
+370       INSERT INTO telephone
+371  			( telephone_id
+372  			, contact_id
+373  			, address_id
+374  			, telephone_type
+375  			, country_code
+376  			, area_code
+377  			, telephone_number
+378  			, created_by
+379  			, creation_date
+380  			, last_updated_by
+381  			, last_update_date )
+382       VALUES
+383  			( telephone_s1.NEXTVAl
+384  			, contact_s1.CURRVAL
+385  			, address_s1.CURRVAL
+386  			, lv_telephone_type
+387  			, pv_country_code
+388  			, pv_area_code
+389  			, pv_telephone_number
+390  			, lv_created_by
+391  			, lv_creation_date
+392  			, lv_created_by
+393  			, lv_creation_date);
+394       COMMIT;
+395  
+396       EXCEPTION
+397           WHEN OTHERS THEN
+398            ROLLBACK TO starting_point2;
+399       END insert_contact;
+400*      END contact_package;
+Errors for PACKAGE BODY CONTACT_PACKAGE:
+
+LINE/COL ERROR                                                                  
+-------- -----------------------------------------------------------------      
+61/9     PL/SQL: Statement ignored                                              
+61/27    PLS-00201: identifier 'SLICE.COMMON_LOOKUP_ID' must be declared        
+66/9     PL/SQL: Statement ignored                                              
+66/28    PLS-00201: identifier 'SLICE.COMMON_LOOKUP_ID' must be declared        
+71/9     PL/SQL: Statement ignored                                              
+71/32    PLS-00201: identifier 'SLICE.COMMON_LOOKUP_ID' must be declared        
+76/9     PL/SQL: Statement ignored                                              
+76/28    PLS-00201: identifier 'SLICE.COMMON_LOOKUP_ID' must be declared        
+81/9     PL/SQL: Statement ignored                                              
+81/30    PLS-00201: identifier 'SLICE.COMMON_LOOKUP_ID' must be declared        
+            ( pv_first_name => 'Sally'
+            *
+ERROR at line 44:
+ORA-06550: line 44, column 13:
+PLS-00103: Encountered the symbol "(" when expecting one of the following: 
+) , * & = - + < / > at in is mod remainder not rem 
+<an exponent (**)> <> or != or ~= >= <= <> and or like like2 
+like4 likec between || multiset member submultiset
+The symbol ")" was substituted for "(" to continue. 
+
+
+
+no rows selected
+
+
+Package created.
+
+
+Warning: Package Body created with compilation errors.
+
+  1  CREATE OR REPLACE PACKAGE BODY contact_package IS
+  2  	FUNCTION insert_contact
+  3              ( pv_first_name         VARCHAR2
+  4              , pv_middle_name        VARCHAR2
+  5              , pv_last_name          VARCHAR2
+  6              , pv_contact_type       VARCHAR2
+  7              , pv_account_number     VARCHAR2
+  8              , pv_member_type        VARCHAR2
+  9              , pv_credit_card_number VARCHAR2
+ 10              , pv_credit_card_type   VARCHAR2
+ 11              , pv_city               VARCHAR2
+ 12              , pv_state_province     VARCHAR2
+ 13              , pv_postal_code        VARCHAR2
+ 14              , pv_address_type       VARCHAR2
+ 15              , pv_country_code       VARCHAR2
+ 16              , pv_area_code          VARCHAR2
+ 17              , pv_telephone_number   VARCHAR2
+ 18              , pv_telephone_type     VARCHAR2
+ 19              , pv_user_name          VARCHAR2) RETURN NUMBER is
+ 20  
+ 21              -- Local variables, to leverage subquery assignments in INSERT statements
+ 22              lv_contact_type          VARCHAR2(50);
+ 23              lv_member_type           VARCHAR2(50);
+ 24              lv_credit_card_type      VARCHAR2(50);
+ 25              lv_address_type          VARCHAR2(50);
+ 26              lv_telephone_type        VARCHAR2(50);
+ 27              lv_created_by            NUMBER;
+ 28              lv_creation_date         DATE := SYSDATE;
+ 29              lv_member_id             NUMBER;
+ 30              lv_retval                NUMBER := 0;
+ 31  
+ 32  /* Write a dynamic SQL cursor that takes three parameters to return the common_lookup_id
+ 33  values into the program scope */
+ 34  	CURSOR c
+ 35  		( cv_table_name          VARCHAR2
+ 36  		,cv_column_name          VARCHAR2
+ 37  		,cv_lookup_type          VARCHAR2 ) is
+ 38              SELECT  c.common_lookup_id
+ 39              FROM    common_lookup c
+ 40              WHERE   c.common_lookup_table = cv_table_name
+ 41              AND     c.common_lookup_column = cv_column_name
+ 42              AND     c.common_lookup_type = cv_lookup_type;
+ 43  
+ 44  
+ 45  
+ 46  /* Return Member_id */
+ 47  	CURSOR m
+ 48  		(cv_account_number VARCHAR2) is
+ 49  		SELECT m.member_id
+ 50  		FROM member m
+ 51  		WHERE m.account_number = cv_account_number;
+ 52  
+ 53  
+ 54  
+ 55  BEGIN
+ 56  	SELECT s.system_user_id
+ 57  	INTO  lv_created_by
+ 58  	FROM   system_user s
+ 59  	WHERE s.system_user_name = pv_user_name;
+ 60  
+ 61      /* Assign a value when a row exists. */
+ 62      -- Member Table lookup
+ 63  	FOR slice IN c('MEMBER', 'MEMBER_TYPE', pv_member_type) LOOP
+ 64          lv_member_type := slice.common_lookup_id;
+ 65  	END LOOP;
+ 66  
+ 67  	-- Lookup contact type for Contact Table
+ 68  	FOR slice IN c('CONTACT', 'CONTACT_TYPE', pv_contact_type) LOOP
+ 69          lv_contact_type := slice.common_lookup_id;
+ 70  	END LOOP;
+ 71  
+ 72  	-- Lookup for credit card type
+ 73  	FOR slice IN c('MEMBER', 'CREDIT_CARD_TYPE', pv_credit_card_type) LOOP
+ 74          lv_credit_card_type := slice.common_lookup_id;
+ 75  	END LOOP;
+ 76  
+ 77      -- Address type lookup from Address Table
+ 78  	FOR slice IN c('ADDRESS', 'ADDRESS_TYPE', pv_address_type) LOOP
+ 79          lv_address_type := slice.common_lookup_id;
+ 80  	END LOOP;
+ 81  
+ 82      -- Get Lookup DI for telephone table
+ 83  	FOR slice IN c('TELEPHONE', 'TELEPHONE_TYPE', pv_telephone_type) LOOP
+ 84          lv_telephone_type := slice.common_lookup_id;
+ 85  	END LOOP;
+ 86  
+ 87  
+ 88      -- Create a SAVEPOINT as a starting point.
+ 89  	SAVEPOINT starting_point1;
+ 90  
+ 91  
+ 92      -- Open CURSOR
+ 93  	OPEN m(pv_account_number);
+ 94  	FETCH m INTO lv_member_id;
+ 95  
+ 96  /* If no member found, add new member */
+ 97  IF m%NOTFOUND THEN
+ 98      INSERT INTO member
+ 99  		( member_id
+100  		, member_type
+101  		, account_number
+102  		, credit_card_number
+103  		, credit_card_type
+104  		, created_by
+105  		, creation_date
+106  		, last_updated_by
+107  		, last_update_date )
+108      VALUES
+109  		( member_s1.NEXTVAL
+110  		, lv_member_type
+111  		, pv_account_number
+112  		, pv_credit_card_number
+113  		, lv_credit_card_type
+114  		, lv_created_by
+115  		, lv_creation_date
+116  		, lv_created_by
+117  		, lv_creation_date );
+118  END IF;
+119  
+120  -- insert into address table
+121      INSERT INTO contact
+122  		( contact_id
+123  		, member_id
+124  		, contact_type
+125  		, last_name
+126  		, first_name
+127  		, middle_name
+128  		, created_by
+129  		, creation_date
+130  		, last_updated_by
+131  		, last_update_date)
+132      VALUES
+133  		( contact_s1.NEXTVAL
+134  		, member_s1.CURRVAL
+135  		, lv_contact_type
+136  		, pv_last_name
+137  		, pv_first_name
+138  		, pv_middle_name
+139  		, lv_created_by
+140  		, lv_creation_date
+141  		, lv_created_by
+142  		, lv_creation_date );
+143  
+144  -- insert into address table
+145      INSERT INTO address
+146  		( address_id
+147  		, contact_id
+148  		, address_type
+149  		, city
+150  		, state_province
+151  		, postal_code
+152  		, created_by
+153  		, creation_date
+154  		, last_updated_by
+155  		, last_update_date)
+156      VALUES
+157  		( address_s1.NEXTVAL
+158  		, contact_s1.CURRVAL
+159  		, lv_address_type
+160  		, pv_city
+161  		, pv_state_province
+162  		, pv_postal_code
+163  		, lv_created_by
+164  		, lv_creation_date
+165  		, lv_created_by
+166  		, lv_creation_date );
+167  
+168  -- insert into telephone table
+169      INSERT INTO telephone
+170  		( telephone_id
+171  		, contact_id
+172  		, address_id
+173  		, telephone_type
+174  		, country_code
+175  		, area_code
+176  		, telephone_number
+177  		, created_by
+178  		, creation_date
+179  		, last_updated_by
+180  		, last_update_date )
+181      VALUES
+182  		( telephone_s1.NEXTVAl
+183  		, contact_s1.CURRVAL
+184  		, address_s1.CURRVAL
+185  		, lv_telephone_type
+186  		, pv_country_code
+187  		, pv_area_code
+188  		, pv_telephone_number
+189  		, lv_created_by
+190  		, lv_creation_date
+191  		, lv_created_by
+192  		, lv_creation_date);
+193      COMMIT;
+194  RETURN lv_retval;
+195  
+196  EXCEPTION
+197  	WHEN OTHERS THEN
+198  	 ROLLBACK TO starting_point1;
+199  	 Return 1;
+200  END insert_contact;
+201  
+202  /***********************************************************************************************
+203  Create a BODY contact_package function
+204  ************************************************************************************************/
+205  CREATE PACKAGE BODY contact_package IS
+206      FUNCTION insert_contact
+207          ( pv_first_name         VARCHAR2
+208          , pv_middle_name        VARCHAR2
+209          , pv_last_name          VARCHAR2
+210          , pv_contact_type       VARCHAR2
+211          , pv_account_number     VARCHAR2
+212          , pv_member_type        VARCHAR2
+213          , pv_credit_card_number VARCHAR2
+214          , pv_credit_card_type   VARCHAR2
+215          , pv_city               VARCHAR2
+216          , pv_state_province     VARCHAR2
+217          , pv_postal_code        VARCHAR2
+218          , pv_address_type       VARCHAR2
+219          , pv_country_code       VARCHAR2
+220          , pv_area_code          VARCHAR2
+221          , pv_telephone_number   VARCHAR2
+222          , pv_telephone_type     VARCHAR2
+223          , pv_user_id            NUMBER) RETURN NUMBER is
+224  
+225      -- Add local variables
+226          lv_contact_type          VARCHAR2(50);
+227          lv_member_type           VARCHAR2(50);
+228          lv_credit_card_type      VARCHAR2(50);
+229          lv_address_type          VARCHAR2(50);
+230          lv_telephone_type        VARCHAR2(50);
+231  
+232      -- If no user_id is passed in, SET default to -1
+233          lv_created_by            NUMBER := nvl(pv_user_id, -1);
+234          lv_creation_date         DATE := SYSDATE;
+235          lv_member_id             NUMBER;
+236          lv_retval                NUMBER := 0;
+237  
+238      /* Write a dynamic SQL cursor that takes three parameters to return the common_lookup_id
+239      values into the program scope */
+240  	CURSOR c
+241  		(cv_table_name        VARCHAR2
+242  		,cv_column_name       VARCHAR2
+243  		,cv_lookup_type       VARCHAR2) is
+244  		SELECT c.common_lookup_id
+245  		FROM common_lookup c
+246  		where c.common_lookup_table = cv_table_name
+247  		and c.common_lookup_column = cv_column_name
+248  		and c.common_lookup_type = cv_lookup_type;
+249  
+250      /* Member cursor */
+251  	CURSOR m
+252  		(cv_account_number VARCHAR2) is
+253  		SELECT m.member_id
+254  		FROM member m
+255  		WHERE m.account_number = cv_account_number;
+256  
+257  
+258  
+259  BEGIN
+260  /* Assign a value when provided for pv_user_id. */
+261      -- Get the member_type ID value
+262  	FOR slice IN c('MEMBER', 'MEMBER_TYPE', pv_member_type) LOOP
+263          lv_member_type := slice.common_lookup_id;
+264  	END LOOP;
+265  
+266  	-- Get the contact_type ID value
+267  	FOR slice IN c('CONTACT', 'CONTACT_TYPE', pv_contact_type) LOOP
+268          lv_contact_type := slice.common_lookup_id;
+269  	END LOOP;
+270  
+271  	-- Get the credit_card_type ID value
+272  	FOR slice IN c('MEMBER', 'CREDIT_CARD_TYPE', pv_credit_card_type) LOOP
+273          lv_credit_card_type := slice.common_lookup_id;
+274  	END LOOP;
+275  
+276      -- Get the address_type ID value
+277  	FOR slice IN c('ADDRESS', 'ADDRESS_TYPE', pv_address_type) LOOP
+278          lv_address_type := slice.common_lookup_id;
+279  	END LOOP;
+280  
+281      -- Get the telephone_type ID value
+282  	FOR slice IN c('TELEPHONE', 'TELEPHONE_TYPE', pv_telephone_type) LOOP
+283          lv_telephone_type := slice.common_lookup_id;
+284  	END LOOP;
+285  
+286  	-- SET the savepoint
+287  	SAVEPOINT starting_point2;
+288  
+289      -- For Get Member Cursor
+290      OPEN m(pv_account_number);
+291      FETCH m INTO lv_member_id;
+292  
+293      -- Insert into Member Table
+294  		IF m%NOTFOUND THEN
+295  
+296  			INSERT INTO member
+297                  ( member_id
+298                  , member_type
+299                  , account_number
+300                  , credit_card_number
+301                  , credit_card_type
+302                  , created_by
+303                  , creation_date
+304                  , last_updated_by
+305                  , last_update_date )
+306              VALUES
+307                  ( member_s1.NEXTVAL
+308                  , lv_member_type
+309                  , pv_account_number
+310                  , pv_credit_card_number
+311                  , lv_credit_card_type
+312                  , lv_created_by
+313                  , lv_creation_date
+314                  , lv_created_by
+315                  , lv_creation_date );
+316              END IF;
+317  
+318              INSERT INTO contact
+319  				( contact_id
+320  				, member_id
+321  				, contact_type
+322  				, last_name
+323  				, first_name
+324  				, middle_name
+325  				, created_by
+326  				, creation_date
+327  				, last_updated_by
+328  				, last_update_date)
+329              VALUES
+330  				( contact_s1.NEXTVAL
+331  				, member_s1.CURRVAL
+332  				, lv_contact_type
+333  				, pv_last_name
+334  				, pv_first_name
+335  				, pv_middle_name
+336  				, lv_created_by
+337  				, lv_creation_date
+338  				, lv_created_by
+339  				, lv_creation_date );
+340  
+341  
+342  -- insert into address table
+343  
+344              INSERT INTO address
+345  				( address_id
+346  				, contact_id
+347  				, address_type
+348  				, city
+349  				, state_province
+350  				, postal_code
+351  				, created_by
+352  				, creation_date
+353  				, last_updated_by
+354  				, last_update_date)
+355              VALUES
+356  				( address_s1.NEXTVAL
+357  				, contact_s1.CURRVAL
+358  				, lv_address_type
+359  				, pv_city
+360  				, pv_state_province
+361  				, pv_postal_code
+362  				, lv_created_by
+363  				, lv_creation_date
+364  				, lv_created_by
+365  				, lv_creation_date );
+366  
+367  
+368  -- insert into telephone table
+369  
+370              INSERT INTO telephone
+371  				( telephone_id
+372  				, contact_id
+373  				, address_id
+374  				, telephone_type
+375  				, country_code
+376  				, area_code
+377  				, telephone_number
+378  				, created_by
+379  				, creation_date
+380  				, last_updated_by
+381  				, last_update_date )
+382              VALUES
+383  				( telephone_s1.NEXTVAl
+384  				, contact_s1.CURRVAL
+385  				, address_s1.CURRVAL
+386  				, lv_telephone_type
+387  				, pv_country_code
+388  				, pv_area_code
+389  				, pv_telephone_number
+390  				, lv_created_by
+391  				, lv_creation_date
+392  				, lv_created_by
+393  				, lv_creation_date);
+394              COMMIT;
+395  
+396              RETURN lv_retval;
+397  
+398              EXCEPTION
+399                  WHEN OTHERS THEN.
+400                  /* Until any partial results. */
+401                  -- dbms_output.put_line('['||lv_debug||']['||lv_debug_id||']');
+402                  -- dbms_output.put_line('ERROR IN PROCEDURE 1: '||SQLERRM);
+403  
+404                   ROLLBACK TO starting_point2;
+405                   RETURN 1;
+406  END insert_contact;
+407* END contact_package;
+Errors for PACKAGE BODY CONTACT_PACKAGE:
+
+LINE/COL ERROR                                                                  
+-------- -----------------------------------------------------------------      
+205/1    PLS-00103: Encountered the symbol "CREATE" when expecting one of       
+         the following:                                                         
+         begin end function pragma procedure                                    
+                                                                                
+BEGIN
+*
+ERROR at line 1:
+ORA-04063: package body "STUDENT.CONTACT_PACKAGE" has errors
+ORA-06508: PL/SQL: could not find program unit being called:
+"STUDENT.CONTACT_PACKAGE"
+ORA-06512: at line 19 
+
+
+
+no rows selected
+
+Errors for PACKAGE BODY CONTACT_PACKAGE:
+
+LINE/COL ERROR                                                                  
+-------- -----------------------------------------------------------------      
+205/1    PLS-00103: Encountered the symbol "CREATE" when expecting one of       
+         the following:                                                         
+         begin end function pragma procedure                                    
+                                                                                
