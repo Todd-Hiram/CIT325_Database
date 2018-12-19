@@ -1,0 +1,60 @@
+
+Type created.
+
+ maia_t extends STUDENT.BASE_T
+ maia_t is NOT FINAL
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ OID                                                NUMBER
+ ONAME                                              VARCHAR2(30)
+ NAME                                               VARCHAR2(30)
+ GENUS                                              VARCHAR2(30)
+
+METHOD
+------
+ MEMBER FUNCTION GET_ONAME RETURNS VARCHAR2
+
+METHOD
+------
+ MEMBER PROCEDURE SET_ONAME
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ ONAME                          VARCHAR2                IN    
+
+METHOD
+------
+ FINAL CONSTRUCTOR FUNCTION MAIA_T RETURNS SELF AS RESULT
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ NAME                           VARCHAR2                IN    
+ GENUS                          VARCHAR2                IN     DEFAULT
+
+METHOD
+------
+ MEMBER FUNCTION GET_NAME RETURNS VARCHAR2
+
+METHOD
+------
+ MEMBER PROCEDURE SET_NAME
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ NAME                           VARCHAR2                IN    
+
+METHOD
+------
+ MEMBER FUNCTION GET_GENUS RETURNS VARCHAR2
+
+METHOD
+------
+ MEMBER PROCEDURE SET_GENUS
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ GENUS                          VARCHAR2                IN    
+
+METHOD
+------
+ MEMBER FUNCTION TO_STRING RETURNS VARCHAR2
+
+
+Type body created.
+
