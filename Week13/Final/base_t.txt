@@ -1,0 +1,40 @@
+
+Type created.
+
+ base_t is NOT FINAL
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ OID                                                NUMBER
+ ONAME                                              VARCHAR2(30)
+
+METHOD
+------
+ FINAL CONSTRUCTOR FUNCTION BASE_T RETURNS SELF AS RESULT
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ OID                            NUMBER                  IN    
+ ONAME                          VARCHAR2                IN     DEFAULT
+
+METHOD
+------
+ MEMBER FUNCTION GET_ONAME RETURNS VARCHAR2
+
+METHOD
+------
+ MEMBER PROCEDURE SET_ONAME
+ Argument Name                  Type                    In/Out Default?
+ ------------------------------ ----------------------- ------ --------
+ ONAME                          VARCHAR2                IN    
+
+METHOD
+------
+ MEMBER FUNCTION GET_NAME RETURNS VARCHAR2
+
+METHOD
+------
+ MEMBER FUNCTION TO_STRING RETURNS VARCHAR2
+
+
+Type body created.
+
+No errors.
